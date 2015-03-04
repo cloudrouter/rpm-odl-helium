@@ -1,12 +1,12 @@
 %define __jar_repack 0
 
-Name: opendaylight
+Name: opendaylight-helium
 Summary: OpenDaylight SDN Controller
-Version: helium
-Release: 3
+Version: 2
+Release: 4
 Source0: https://nexus.opendaylight.org/content/groups/public/org/opendaylight/integration/distribution-karaf/0.2.2-Helium-SR2/distribution-karaf-0.2.2-Helium-SR2.tar.gz
-Source1: opendaylight-service.tar.gz
-Patch0: opendaylight-helium-remove_credentials.patch
+Source1: opendaylight-helium.service
+Patch0: 0001-opendaylight-helium-remove-credentials.patch
 Group: Applications/Communications
 License: EPL-1.0
 URL: http://www.opendaylight.org
@@ -14,13 +14,23 @@ BuildArch: noarch
 BuildRoot: %{_tmppath}/%{name}-buildroot
 
 Requires: java-1.7.0-openjdk-devel >= 1.7.0
-Requires(pre): shadow-utils
+Requires(pre): shadow-utils, glibc-common
+Requires(postun): shadow-utils
 BuildRequires: systemd
 
+# this is used to identify if we need to remove the odl user/group when
+# removing
+Provides: opendaylight
+
 %pre
+%global odl_user odl
+%global odl_home /opt/opendaylight
+
 # Create odl user/group
-getent passwd odl > /dev/null || useradd odl -M -d $RPM_BUILD_ROOT/opt/%name/%name-%version
-getent group odl > /dev/null || groupadd odl
+getent passwd %{odl_user} > /dev/null \
+    || useradd --system --home-dir %{odl_home}
+getent group %{odl_user} > /dev/null \
+    || groupadd --system %{odl_user}
 
 # disable debug packages and the stripping of the binaries
 %global _enable_debug_package 0
@@ -31,35 +41,46 @@ getent group odl > /dev/null || groupadd odl
 OpenDaylight is an open platform for network programmability to enable SDN and create a solid foundation for NFV for networks at any size and scale.
 
 %prep
-%setup -q -b 1 -n opendaylight-service
-%setup -q -b 0 -n distribution-karaf-0.2.2-Helium-SR2
-%patch0 -p0
+ROOT_DIR=$(dirname $(tar -tf %{SOURCE0} | head -n 1))
+%autosetup -N -c -n %{name}
+mv ${ROOT_DIR}/* .
+rm -rf ${ROOT_DIR}
+%autopatch -p0
 
 %build
 
 %install
-mkdir -p $RPM_BUILD_ROOT/opt/%{name}/%{name}-%{version}
-cp -r ../distribution-karaf-0.2.2-Helium-SR2/* $RPM_BUILD_ROOT/opt/%{name}/%{name}-%{version}
-# Create dir in build root for systemd .service file and copy it over
-mkdir -p $RPM_BUILD_ROOT/%{_unitdir}
-cp ../opendaylight-service/opendaylight.service $RPM_BUILD_ROOT/%{_unitdir}
+install -d %{buildroot}/%{odl_home}
+cp -R %{_builddir}/%{name} %{buildroot}/%{odl_home}
+install -D %{SOURCE1} %{buildroot}/%{_unitdir}/%{name}.service
 
 %clean
-rm -rf $RPM_BUILD_ROOT
+rm -rf %
  
 %post
-echo " "
-echo "OpenDaylight Helium successfully installed"
+%systemd_post %{name}.service
 
 %postun
-rm -rf $RPM_BUILD_ROOT/opt/%{name}/%{name}-%{version}
+%systemd_postun_with_restart %{name}.service
+
+# remove installed files
+rm -rf %{odl_home}/%{name}
+
+# remove odl user/group if no other opendaylight package is installed
+rpmquery --query --whatprovides opendaylight > /dev/null \
+    || { userdel %{odl_user} && groupdel %{odl_user}; }
 
 %files
 # ODL uses systemd to run as user:group odl:odl
-%attr(0775,odl,odl) /opt/%name/%name-%version/
-%attr(0644,-,-) %{_unitdir}/%name.service
+%attr(0775,odl,odl) %{odl_home}/%{name}
+%attr(0644,-,-) %{_unitdir}/%{name}.service
 
 %changelog
+* Wed Mar 04 2015 Arun Babu Neelicattu <abn@iix.net> - 2-4
+- Rename package to opendaylight-helium-version-release, use macros instead of
+  variables, update spec file to use autosetup, add opendaylight virtual
+  capability, rename service to reflect new package name.
+
 * Mon Feb 23 2015 David Jorm - helium-3
 - Added systemd integration, removed default karaf credentials
 * Sun Feb 01 2015 David Jorm - helium-2
