@@ -76,7 +76,7 @@ rpmquery --query --whatprovides opendaylight > /dev/null \
 %attr(0644,-,-) %{_unitdir}/%{name}.service
 
 %changelog
-* Fri Mar 20 2015 David Jorm - 3-0
+* Fri Mar 20 2015 David Jorm - 3-1
 - Upgraded to helium SR3
 * Wed Mar 04 2015 Arun Babu Neelicattu <abn@iix.net> - 2-4
 - Rename package to opendaylight-helium-version-release, use macros instead of
