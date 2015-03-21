@@ -28,7 +28,7 @@ Provides: opendaylight
 
 # Create odl user/group
 getent passwd %{odl_user} > /dev/null \
-    || useradd --system --home-dir %{odl_home}
+    || useradd --system --home-dir %{odl_home} %{odl_user}
 getent group %{odl_user} > /dev/null \
     || groupadd --system %{odl_user}
 
