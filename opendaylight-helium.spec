@@ -3,8 +3,8 @@
 Name: opendaylight-helium
 Summary: OpenDaylight SDN Controller
 Version: 3
-Release: 0
-Source0: https://nexus.opendaylight.org/content/repositories/public/org/opendaylight/integration/distribution-karaf/0.2.3-Helium-SR3/distribution-karaf-0.2.3-Helium-SR3.tar.gz
+Release: 2%{?dist}
+Source0: https://nexus.opendaylight.org/content/groups/public/org/opendaylight/integration/distribution-karaf/0.2.4-Helium-SR4/distribution-karaf-0.2.4-Helium-SR4.tar.gz
 Source1: opendaylight-helium.service
 Patch0: 0001-opendaylight-helium-remove-credentials.patch
 Group: Applications/Communications
@@ -76,6 +76,8 @@ rpmquery --query --whatprovides opendaylight > /dev/null \
 %attr(0644,-,-) %{_unitdir}/%{name}.service
 
 %changelog
+* Tue Dec 29 2015 John Siegrist <john@complects.com> - 3-2
+- Upgraded to helium SR4.
 * Fri Mar 20 2015 David Jorm - 3-1
 - Upgraded to helium SR3
 * Wed Mar 04 2015 Arun Babu Neelicattu <abn@iix.net> - 2-4
